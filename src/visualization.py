@@ -32,6 +32,28 @@ def plot_numeric_distribution(df: pd.DataFrame, columns: Optional[List[str]] = N
     if columns is None:
         columns = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
     
+    # Validate column names
+    valid_columns = []
+    column_mapping = {}
+    
+    for col in columns:
+        if col in df.columns:
+            valid_columns.append(col)
+        else:
+            # Try to find a match by converting DataFrame columns to lowercase with underscores
+            for df_col in df.columns:
+                if col == df_col.lower().replace(' ', '_'):
+                    column_mapping[col] = df_col
+                    valid_columns.append(df_col)
+                    break
+    
+    if len(valid_columns) < len(columns):
+        missing_count = len(columns) - len(valid_columns)
+        print(f"Warning: {missing_count} column(s) not found in DataFrame. Using {len(valid_columns)} valid columns.")
+    
+    # Update columns to use only valid ones
+    columns = valid_columns
+    
     # Skip if no numeric columns
     if not columns:
         print("No numeric columns to visualize")
