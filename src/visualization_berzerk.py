@@ -2,10 +2,9 @@ import colorsys
 from matplotlib.colors import LinearSegmentedColormap
 
 
-def create_interactive_dashboard(df: pd.DataFrame, title: str = "Interactive Data Dashboard"):
+def create_interactive_dashboard(df, title="Interactive Data Dashboard"):
     """
-    Create a comprehensive interactive dashboard with multiple visualization types.
-    Note: This function is meant to be used in Jupyter notebooks with ipywidgets installed.
+    Create a simplified interactive dashboard with basic visualization options.
     
     Parameters:
     -----------
@@ -16,7 +15,6 @@ def create_interactive_dashboard(df: pd.DataFrame, title: str = "Interactive Dat
     """
     try:
         import ipywidgets as widgets
-        from IPython.display import display, clear_output
     except ImportError:
         print("This function requires ipywidgets. Install with: pip install ipywidgets")
         return
@@ -28,7 +26,7 @@ def create_interactive_dashboard(df: pd.DataFrame, title: str = "Interactive Dat
     
     # Define visualization options
     viz_types = ['Histogram', 'Scatter Plot', 'Line Chart', 'Bar Chart', 'Box Plot', 
-                'Violin Plot', 'Heatmap', 'Pair Plot', 'Correlation Matrix']
+                'Violin Plot', 'Heatmap', 'Pair Plot']
     
     # Create output widget for the visualization
     output = widgets.Output()
@@ -36,12 +34,10 @@ def create_interactive_dashboard(df: pd.DataFrame, title: str = "Interactive Dat
     # Create tab structure
     tab_data = widgets.Output()
     tab_viz = widgets.Output()
-    tab_stats = widgets.Output()
     
-    tabs = widgets.Tab(children=[tab_data, tab_viz, tab_stats])
+    tabs = widgets.Tab(children=[tab_data, tab_viz])
     tabs.set_title(0, 'Data Preview')
     tabs.set_title(1, 'Visualizations')
-    tabs.set_title(2, 'Statistics')
     
     # DATA TAB
     with tab_data:
@@ -70,47 +66,200 @@ def create_interactive_dashboard(df: pd.DataFrame, title: str = "Interactive Dat
             style={'description_width': 'initial'}
         )
         
+        # Create data display output
+        data_output = widgets.Output()
+        
         # Function to update filter value widget status
-        def update_filter_value_status(*args):
+        def update_filter_value_status(change):
             filter_value.disabled = filter_col.value == 'None'
         
         filter_col.observe(update_filter_value_status, names='value')
         
-        # Create data display output
-        data_output = widgets.Output()
-        
         # Function to update data display
-        def update_data_display(*args):
+        def update_data_display(change):
             with data_output:
                 clear_output(wait=True)
                 
                 # Apply filter if selected
+                filtered_df = df
                 if filter_col.value != 'None' and filter_value.value:
                     try:
                         # Handle different types of filters
                         col = filter_col.value
                         val = filter_value.value
                         
-                        if df[col].dtype in ['int64', 'float64']:        # Create dummy scatter points for the legend
-        for size, label in zip(size_legend_sizes, size_legend_labels):
-            ax.scatter([], [], s=size, c='gray', alpha=0.7, edgecolors='w',
-                     linewidth=0.5, label=f'{size_col}: {label}')
+                        if filtered_df[col].dtype in ['int64', 'float64']:
+                            # For numeric columns, try to convert the value
+                            try:
+                                numeric_val = float(val)
+                                filtered_df = filtered_df[filtered_df[col] == numeric_val]
+                            except ValueError:
+                                print(f"Error: '{val}' is not a valid number for column '{col}'")
+                        else:
+                            # For non-numeric columns, use string comparison
+                            filtered_df = filtered_df[filtered_df[col].astype(str).str.contains(val)]
+                    except Exception as e:
+                        print(f"Error applying filter: {e}")
+                
+                # Display the data
+                display(filtered_df.head(n_rows.value))
         
-        # Add the size legend
-        plt.legend(loc='lower right')
+        # Connect the widgets to the update function
+        filter_col.observe(update_data_display, names='value')
+        filter_value.observe(update_data_display, names='value')
+        n_rows.observe(update_data_display, names='value')
+        
+        # Layout the widgets
+        filter_controls = widgets.HBox([filter_col, filter_value, n_rows])
+        display(filter_controls)
+        display(data_output)
+        
+        # Show initial data view
+        update_data_display(None)
     
-    # Add title
-    plt.title(title, fontsize=16)
+    # VISUALIZATION TAB
+    with tab_viz:
+        # Create visualization control widgets
+        viz_type = widgets.Dropdown(
+            options=viz_types,
+            value='Histogram',
+            description='Chart Type:',
+            style={'description_width': 'initial'}
+        )
+        
+        x_axis = widgets.Dropdown(
+            options=['None'] + df.columns.tolist(),
+            value='None',
+            description='X-Axis:',
+            style={'description_width': 'initial'}
+        )
+        
+        y_axis = widgets.Dropdown(
+            options=['None'] + numeric_cols,
+            value='None',
+            description='Y-Axis:',
+            style={'description_width': 'initial'},
+            disabled=False
+        )
+        
+        color_by = widgets.Dropdown(
+            options=['None'] + categorical_cols,
+            value='None',
+            description='Color By:',
+            style={'description_width': 'initial'}
+        )
+        
+        # Function to update visualization
+        def update_visualization(change):
+            with output:
+                clear_output(wait=True)
+                
+                if x_axis.value == 'None':
+                    print("Please select an X-axis variable")
+                    return
+                
+                plt.figure(figsize=(10, 6))
+                
+                try:
+                    # Different visualization types
+                    if viz_type.value == 'Histogram':
+                        if x_axis.value in numeric_cols:
+                            sns.histplot(data=df, x=x_axis.value, hue=color_by.value if color_by.value != 'None' else None)
+                        else:
+                            sns.countplot(data=df, x=x_axis.value, hue=color_by.value if color_by.value != 'None' else None)
+                    
+                    elif viz_type.value == 'Scatter Plot':
+                        if y_axis.value == 'None':
+                            print("Please select a Y-axis variable for a scatter plot")
+                            return
+                        sns.scatterplot(data=df, x=x_axis.value, y=y_axis.value, 
+                                      hue=color_by.value if color_by.value != 'None' else None)
+                    
+                    elif viz_type.value == 'Line Chart':
+                        if y_axis.value == 'None':
+                            print("Please select a Y-axis variable for a line chart")
+                            return
+                        sns.lineplot(data=df, x=x_axis.value, y=y_axis.value, 
+                                   hue=color_by.value if color_by.value != 'None' else None)
+                    
+                    elif viz_type.value == 'Bar Chart':
+                        if y_axis.value == 'None':
+                            sns.countplot(data=df, x=x_axis.value, hue=color_by.value if color_by.value != 'None' else None)
+                        else:
+                            sns.barplot(data=df, x=x_axis.value, y=y_axis.value, 
+                                      hue=color_by.value if color_by.value != 'None' else None)
+                    
+                    elif viz_type.value == 'Box Plot':
+                        if y_axis.value == 'None':
+                            print("Please select a Y-axis variable for a box plot")
+                            return
+                        sns.boxplot(data=df, x=x_axis.value, y=y_axis.value, 
+                                   hue=color_by.value if color_by.value != 'None' else None)
+                    
+                    elif viz_type.value == 'Violin Plot':
+                        if y_axis.value == 'None':
+                            print("Please select a Y-axis variable for a violin plot")
+                            return
+                        sns.violinplot(data=df, x=x_axis.value, y=y_axis.value, 
+                                     hue=color_by.value if color_by.value != 'None' else None)
+                    
+                    elif viz_type.value == 'Heatmap':
+                        if y_axis.value == 'None':
+                            print("Please select a Y-axis variable for a heatmap")
+                            return
+                        if x_axis.value in categorical_cols and y_axis.value in categorical_cols:
+                            # Create a crosstab for categorical variables
+                            heatmap_data = pd.crosstab(df[y_axis.value], df[x_axis.value])
+                            sns.heatmap(heatmap_data, annot=True, cmap='viridis')
+                        elif x_axis.value in numeric_cols and y_axis.value in numeric_cols:
+                            # Create a 2D histogram for numeric variables
+                            plt.hist2d(df[x_axis.value], df[y_axis.value], bins=20, cmap='viridis')
+                            plt.colorbar(label='Count')
+                        else:
+                            print("Heatmap requires both X and Y to be the same type (both categorical or both numeric)")
+                            return
+                    
+                    elif viz_type.value == 'Pair Plot':
+                        if color_by.value != 'None':
+                            variables = [col for col in [x_axis.value, y_axis.value] if col != 'None']
+                            if len(variables) < 2:
+                                print("Please select both X and Y variables for a pair plot")
+                                return
+                            sns.pairplot(df[variables + [color_by.value]], hue=color_by.value)
+                        else:
+                            print("Please select a 'Color By' variable for the pair plot")
+                            return
+                    
+                    plt.title(f"{viz_type.value} of {y_axis.value if y_axis.value != 'None' else ''} by {x_axis.value}")
+                    plt.tight_layout()
+                    plt.show()
+                    
+                except Exception as e:
+                    print(f"Error creating visualization: {e}")
+        
+        # Connect widgets to the update function
+        viz_type.observe(update_visualization, names='value')
+        x_axis.observe(update_visualization, names='value')
+        y_axis.observe(update_visualization, names='value')
+        color_by.observe(update_visualization, names='value')
+        
+        # Layout the visualization controls
+        viz_controls = widgets.VBox([
+            widgets.HBox([viz_type]),
+            widgets.HBox([x_axis, y_axis]),
+            widgets.HBox([color_by])
+        ])
+        
+        display(viz_controls)
+        display(output)
+        
+        # Show initial visualization
+        update_visualization(None)
     
-    plt.tight_layout()
+    # Display the tabs
+    display(tabs)
     
-    # Save figure if path provided
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    
-    plt.show()
-    return fig
-
+    return tabs
 
 def plot_dendrogram(data: Union[pd.DataFrame, np.ndarray], labels: Optional[List[str]] = None,
                   method: str = 'ward', metric: str = 'euclidean',
@@ -1487,6 +1636,7 @@ def create_bubble_chart(df: pd.DataFrame, x_col: str, y_col: str, size_col: str,
 
 
 # Import extra modules needed for advanced functions
+try:
     # Handle numeric filters
     if df[col].dtype in ['int64', 'float64']:
         # Try to convert to number and filter
@@ -1509,11 +1659,9 @@ def create_bubble_chart(df: pd.DataFrame, x_col: str, y_col: str, size_col: str,
     else:
         # String filter - case insensitive substring match
         filtered_df = df[df[col].astype(str).str.contains(val, case=False, na=False)]
-    except Exception as e:
-        print(f"Filter error: {e}")
-        filtered_df = df
-    else:
-        filtered_df = df
+except Exception as e:
+    print(f"Filter error: {e}")
+    filtered_df = df
 
 # Display data
 display(filtered_df.head(n_rows))
