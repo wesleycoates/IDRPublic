@@ -48,6 +48,7 @@ def get_numeric_and_categorical_columns(df: pd.DataFrame) -> Tuple[List[str], Li
 
 # Implement some data transformation steps to convert non-uniform columns with data type mismatches to workable strings
 # Create a custom transformer for converting mixed types to string
+
 class TypeUnifier(BaseEstimator, TransformerMixin):
     """
     Transformer that ensures uniform string type for categorical variables.
@@ -57,12 +58,16 @@ class TypeUnifier(BaseEstimator, TransformerMixin):
         return self
     
     def transform(self, X):
-        X_copy = X.copy()
-        # Convert all columns to string type
-        for col in X_copy.columns:
-            X_copy[col] = X_copy[col].astype(str)
-        return X_copy
-
+        # Handle both DataFrame and numpy array inputs
+        if hasattr(X, 'columns'):  # It's a pandas DataFrame
+            X_copy = X.copy()
+            # Convert all columns to string type
+            for col in X_copy.columns:
+                X_copy[col] = X_copy[col].astype(str)
+            return X_copy
+        else:  # It's a numpy array
+            # For numpy arrays, we convert all elements to strings
+            return np.array([str(x) for x in X.flatten()]).reshape(X.shape)
 
 def create_preprocessing_pipeline(numeric_columns: List[str], categorical_columns: List[str]) -> ColumnTransformer:
     """
