@@ -69,6 +69,23 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     
     return cleaned_df
 
+# Filter the data to the target dataset in scope
+# Filter the main dataframe to include only 'Single' cases
+# First, let's check the unique values in the "Type of Dispute" column
+print("Unique values in 'Type of Dispute' column:")
+print(df["Type of Dispute"].unique())
+
+# Now filter for only Single cases
+df_single = df[df["Type of Dispute"] == "Single"]
+print(f"\nFiltered for Single cases only")
+print(f"Original dataframe shape: {df.shape}")
+print(f"Filtered dataframe shape: {df_single.shape}")
+print(f"Percentage of Single cases: {df_single.shape[0]/df.shape[0]*100:.2f}%")
+
+# Display the first few rows of the filtered data
+print("\nFirst 5 rows of filtered data:")
+df_single.head()
+
 
 def split_data(df: pd.DataFrame, target_column: str, test_size: float = 0.2, random_state: int = 42) -> Tuple:
     """

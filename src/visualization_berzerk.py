@@ -1487,33 +1487,33 @@ def create_bubble_chart(df: pd.DataFrame, x_col: str, y_col: str, size_col: str,
 
 
 # Import extra modules needed for advanced functions
-        # Handle numeric filters
-        if df[col].dtype in ['int64', 'float64']:
-            # Try to convert to number and filter
-            try:
-                if '<' in val:
-                    num_val = float(val.replace('<', '').strip())
-                    filtered_df = df[df[col] < num_val]
-                elif '>' in val:
-                    num_val = float(val.replace('>', '').strip())
-                    filtered_df = df[df[col] > num_val]
-                elif '-' in val and not val.startswith('-'):
-                    lower, upper = map(float, val.split('-'))
-                    filtered_df = df[(df[col] >= lower) & (df[col] <= upper)]
-                else:
-                    num_val = float(val)
-                    filtered_df = df[df[col] == num_val]
-            except:
-                print(f"Invalid numeric filter: {val}")
-                filtered_df = df
-        else:
-            # String filter - case insensitive substring match
-            filtered_df = df[df[col].astype(str).str.contains(val, case=False, na=False)]
+    # Handle numeric filters
+    if df[col].dtype in ['int64', 'float64']:
+        # Try to convert to number and filter
+        try:
+            if '<' in val:
+                num_val = float(val.replace('<', '').strip())
+                filtered_df = df[df[col] < num_val]
+            elif '>' in val:
+                num_val = float(val.replace('>', '').strip())
+                filtered_df = df[df[col] > num_val]
+            elif '-' in val and not val.startswith('-'):
+                lower, upper = map(float, val.split('-'))
+                filtered_df = df[(df[col] >= lower) & (df[col] <= upper)]
+            else:
+                num_val = float(val)
+                filtered_df = df[df[col] == num_val]
+        except:
+            print(f"Invalid numeric filter: {val}")
+            filtered_df = df
+    else:
+        # String filter - case insensitive substring match
+        filtered_df = df[df[col].astype(str).str.contains(val, case=False, na=False)]
     except Exception as e:
         print(f"Filter error: {e}")
         filtered_df = df
-else:
-    filtered_df = df
+    else:
+        filtered_df = df
 
 # Display data
 display(filtered_df.head(n_rows))

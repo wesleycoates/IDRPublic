@@ -4,7 +4,8 @@ from typing import Optional, List, Dict, Any, Tuple
 import pickle
 from pathlib import Path
 
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransformer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -45,10 +46,27 @@ def get_numeric_and_categorical_columns(df: pd.DataFrame) -> Tuple[List[str], Li
     
     return numeric_columns, categorical_columns
 
+# Implement some data transformation steps to convert non-uniform columns with data type mismatches to workable strings
+# Create a custom transformer for converting mixed types to string
+class TypeUnifier(BaseEstimator, TransformerMixin):
+    """
+    Transformer that ensures uniform string type for categorical variables.
+    This addresses the common issue of mixed int/str types in categorical columns.
+    """
+    def fit(self, X, y=None):
+        return self
+    
+    def transform(self, X):
+        X_copy = X.copy()
+        # Convert all columns to string type
+        for col in X_copy.columns:
+            X_copy[col] = X_copy[col].astype(str)
+        return X_copy
+
 
 def create_preprocessing_pipeline(numeric_columns: List[str], categorical_columns: List[str]) -> ColumnTransformer:
     """
-    Create a preprocessing pipeline for numeric and categorical features.
+    Creates a preprocessing pipeline for numeric and categorical features.
     
     Parameters:
     -----------
@@ -71,6 +89,7 @@ def create_preprocessing_pipeline(numeric_columns: List[str], categorical_column
     # Define categorical preprocessing pipeline
     categorical_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('type_unifier', TypeUnifier()),  # Convert mixed types to strings
         ('onehot', OneHotEncoder(handle_unknown='ignore'))
     ])
     
