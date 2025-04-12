@@ -209,8 +209,7 @@ def plot_categorical_counts(df: pd.DataFrame,
                 value_counts = value_counts.sort_values(ascending=True)
                 percentages = percentages[value_counts.index]
                 
-                bars = sns.barplot(x=value_counts.values, y=value_counts.index, 
-                                 ax=axes[i], palette=palette)
+                bars = sns.barplot(x=value_counts.index, y=value_counts.values, hue=value_counts.index, ax=ax, palette=palette, legend=False)
                 
                 # Add percentage labels if requested
                 if show_percentages:
@@ -224,8 +223,8 @@ def plot_categorical_counts(df: pd.DataFrame,
                 axes[i].set_title(f'{col} Distribution (n={total_count})')
                 
             else:  # vertical
-                bars = sns.barplot(x=value_counts.index, y=value_counts.values, 
-                                 ax=axes[i], palette=palette)
+                bars = sns.barplot(x=value_counts.index, y=value_counts.values, hue=value_counts.index,
+                                 ax=axes[i], palette=palette, legend=False)
                 
                 # Add percentage labels if requested
                 if show_percentages:
@@ -312,7 +311,7 @@ def plot_boxplots(df: pd.DataFrame,
         if i < len(axes):
             if groupby_col:
                 # Create grouped boxplot
-                sns.boxplot(x=groupby_col, y=col, data=df, ax=axes[i], palette=palette)
+                sns.boxplot(x=groupby_col, y=col, data=df, ax=axes[i], hue=groupby_col, palette=palette, legend=False)
                 
                 # Rotate x-axis labels if necessary
                 if len(df[groupby_col].unique()) > 4:

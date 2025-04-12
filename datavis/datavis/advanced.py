@@ -1,3 +1,13 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from typing import List, Tuple, Dict, Optional, Union, Any, Callable
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+import matplotlib.gridspec as gridspec
+# And any other libraries your specific functions need
+
 def create_stacked_area_chart(df: pd.DataFrame, 
                             x_col: str, 
                             y_cols: List[str],

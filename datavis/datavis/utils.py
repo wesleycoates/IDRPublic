@@ -201,6 +201,10 @@ def visualize_dataset_summary(df: pd.DataFrame,
             
             # Set title and format x-axis
             subax.set_title(col, fontsize=12)
+            # First get the current ticks and set them explicitly
+            ticks = subax.get_xticks()
+            subax.set_xticks(ticks)
+            # Then set the labels
             subax.set_xticklabels(subax.get_xticklabels(), rotation=45, ha='right', fontsize=8)
             subax.set_ylabel('Count')
             
