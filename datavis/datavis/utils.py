@@ -81,8 +81,11 @@ def visualize_dataset_summary(df: pd.DataFrame,
         }).sort_values('Missing Values', ascending=False)
         
         # Plot missing values
-        sns.barplot(x='Column', y='Percent', data=missing_df, ax=ax2, palette='YlOrRd')
+        sns.barplot(x='Column', y='Percent', data=missing_df, hue='Column', ax=ax2, palette='YlOrRd', legend=False)
         ax2.set_title('Missing Values (%)', fontsize=14)
+        # First get and set the ticks
+        ticks = ax2.get_xticks()
+        ax2.set_xticks(ticks)
         ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha='right')
         ax2.set_ylabel('Percent Missing')
     else:
